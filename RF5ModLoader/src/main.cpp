@@ -11,6 +11,7 @@ using namespace std;
 
 const char* gameAssemblyName = "GameAssembly";
 std::wstring DataDir;
+std::wstring DataDirName;
 
 FARPROC GetModuleSymbolAddress(const char* module, const char* symbol)
 {
@@ -53,7 +54,7 @@ NOINLINE HANDLE __cdecl Hook_kernel32_CreateFileW(
 	auto filepath = std::filesystem::path(lpFileName).lexically_normal().wstring();
 	if (filepath.find(DataDir) != std::wstring::npos)
 	{
-		wstring_replace(filepath, L"Rune Factory 5_Data", L"mods");
+		wstring_replace(filepath, DataDirName, L"mods");
 		if (std::filesystem::exists(filepath))
 		{
 			wprintf(L"Patching file: %s\n", filepath.c_str());
@@ -135,12 +136,14 @@ DllExport void Initialize()
 	GetModuleFileNameW(NULL, buffer, MAX_PATH);
 	auto fileName = std::filesystem::path(buffer).stem();
 
-	DataDir = std::filesystem::absolute(std::format("{}_Data", fileName.generic_string().c_str())).lexically_normal().wstring();
+	auto dataDir = ::filesystem::absolute(std::format("{}_Data", fileName.generic_string().c_str()));
+	DataDir = dataDir.lexically_normal();
+	DataDirName = dataDir.stem();
 
 	if (!std::filesystem::exists("mods"))
 		std::filesystem::create_directory("mods");
-	if (!std::filesystem::exists("plugins"))
-		std::filesystem::create_directory("plugins");
+	//if (!std::filesystem::exists("plugins"))
+	//	std::filesystem::create_directory("plugins");
 
 	PLH::CapstoneDisassembler dis(PLH::Mode::x64);
 	//Detour_LoadLibraryW = new PLH::x64Detour(
