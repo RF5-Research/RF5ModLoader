@@ -64,27 +64,27 @@ NOINLINE HANDLE __cdecl Hook_kernel32_CreateFileW(
 	return funcPTR(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 }
 
-//void LoadPlugins()
-//{
-//	HANDLE process = GetCurrentProcess();
-//	auto dir = std::format("{}/{}", filesystem::current_path().generic_string().c_str(), "plugins");
-//	if (filesystem::exists(dir))
-//	{
-//		for (const auto& dirEntry : filesystem::recursive_directory_iterator::recursive_directory_iterator(dir))
-//		{
-//			if (dirEntry.is_regular_file())
-//			{
-//				auto plugin = dirEntry.path();
-//				if (plugin.extension().compare("dll"))
-//				{
-//					auto moduleName = plugin.generic_string();
-//					LoadLibraryA(moduleName.c_str());
-//					printf("Inject Module: %s\n", moduleName.c_str());
-//				}
-//			}
-//		}
-//	}
-//}
+void LoadPlugins()
+{
+	HANDLE process = GetCurrentProcess();
+	auto dir = std::format("{}/{}", filesystem::current_path().generic_string().c_str(), "plugins");
+	if (filesystem::exists(dir))
+	{
+		for (const auto& dirEntry : filesystem::recursive_directory_iterator::recursive_directory_iterator(dir))
+		{
+			if (dirEntry.is_regular_file())
+			{
+				auto plugin = dirEntry.path();
+				if (plugin.extension().compare("dll"))
+				{
+					auto moduleName = plugin.generic_string();
+					LoadLibraryA(moduleName.c_str());
+					printf("Inject Module: %s\n", moduleName.c_str());
+				}
+			}
+		}
+	}
+}
 
 //uint64_t oil2cpp_thread_attach;
 //PLH::x64Detour* Detour_il2cpp_thread_attach;
@@ -97,39 +97,40 @@ NOINLINE HANDLE __cdecl Hook_kernel32_CreateFileW(
 //	return thread;
 //}
 
-//uint64_t oLoadLibraryW;
-//PLH::x64Detour* Detour_LoadLibraryW;
-//NOINLINE HMODULE __cdecl Hook_LoadLibraryW(LPCWSTR lpLibFileName)
-//{
-//	printf("Test\n");
-//	auto moduleName = std::format("{}.dll", gameAssemblyName);
-//	size_t newsize = strlen(moduleName.c_str()) + 1;
-//	wchar_t* wcstring = new wchar_t[newsize];
-//	size_t convertedChars = 0;
-//	mbstowcs_s(&convertedChars, wcstring, newsize, moduleName.c_str(), _TRUNCATE);
-//
-//	if (std::wstring(lpLibFileName).compare(wcstring))
-//	{
-//		Detour_LoadLibraryW->unHook();
-//		LoadLibraryW(wcstring);
-//		PLH::CapstoneDisassembler dis(PLH::Mode::x64);
-//		Detour_il2cpp_thread_attach = new PLH::x64Detour(
-//			reinterpret_cast<char*>(GetModuleSymbolAddress(moduleName.c_str(), "il2cpp_thread_attach")),
-//			reinterpret_cast<char*>(&Hook_il2cpp_thread_attach),
-//			&oil2cpp_thread_attach,
-//			dis
-//		);
-//		Detour_il2cpp_thread_attach->hook();
-//		return GetModuleHandleA(moduleName.c_str());
-//	}
-//	else
-//	{
-//		return PLH::FnCast(oLoadLibraryW, Hook_LoadLibraryW)(lpLibFileName);
-//	}
-//}
+uint64_t oLoadLibraryW;
+PLH::x64Detour* Detour_LoadLibraryW;
+NOINLINE HMODULE __cdecl Hook_LoadLibraryW(LPCWSTR lpLibFileName)
+{
+	auto moduleName = std::format("{}.dll", gameAssemblyName);
+	size_t newsize = strlen(moduleName.c_str()) + 1;
+	wchar_t* wcstring = new wchar_t[newsize];
+	size_t convertedChars = 0;
+	mbstowcs_s(&convertedChars, wcstring, newsize, moduleName.c_str(), _TRUNCATE);
+
+	if (std::wstring(lpLibFileName).compare(wcstring))
+	{
+		Detour_LoadLibraryW->unHook();
+		LoadLibraryW(wcstring);
+		PLH::CapstoneDisassembler dis(PLH::Mode::x64);
+		LoadPlugins();
+		//Detour_il2cpp_thread_attach = new PLH::x64Detour(
+		//	reinterpret_cast<char*>(GetModuleSymbolAddress(moduleName.c_str(), "il2cpp_thread_attach")),
+		//	reinterpret_cast<char*>(&Hook_il2cpp_thread_attach),
+		//	&oil2cpp_thread_attach,
+		//	dis
+		//);
+		//Detour_il2cpp_thread_attach->hook();
+		return GetModuleHandleA(moduleName.c_str());
+	}
+	else
+	{
+		return PLH::FnCast(oLoadLibraryW, Hook_LoadLibraryW)(lpLibFileName);
+	}
+}
 
 DllExport void Initialize()
 {
+	printf("Test\n");
 	freopen_s(reinterpret_cast<FILE**>(stdout), "CONOUT$", "w", stdout);
 
 	wchar_t buffer[MAX_PATH];
@@ -161,4 +162,6 @@ DllExport void Initialize()
 		dis
 	);
 	detour_kernel32_CreateFileW->hook();
+	printf("Test5\n");
+
 }

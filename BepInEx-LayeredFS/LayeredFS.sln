@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31410.357
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RF5ModLoader", "RF5ModLoader.csproj", "{9C3C812A-82A9-4980-9072-6074645BC50F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LayeredFS", "LayeredFS.csproj", "{9C3C812A-82A9-4980-9072-6074645BC50F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
